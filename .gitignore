@@ -18,7 +18,6 @@ vendor/
 go.work
 
 # Environment variables
-.env
 .env.local
 
 # IDE
