@@ -9,27 +9,6 @@ import (
 	"time"
 )
 
-// Structs
-type GeminiRequest struct {
-	Contents []Content `json:"contents"`
-}
-
-type Content struct {
-	Parts []Part `json:"parts"`
-}
-
-type Part struct {
-	Text string `json:"text"`
-}
-
-type GeminiResponse struct {
-	Candidates []Candidate `json:"candidates"`
-}
-
-type Candidate struct {
-	Content Content `json:"content"`
-}
-
 type StockRecommendationResponse struct {
 	Status   string `json:"status"`
 	Date     string `json:"date"`
@@ -38,9 +17,8 @@ type StockRecommendationResponse struct {
 }
 
 func DailyRecommendations(w http.ResponseWriter, r *http.Request) {
-	// Set CORS headers
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Accept")
+	w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, X-goog-api-key")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 	w.Header().Set("Content-Type", "application/json")
 
@@ -56,40 +34,92 @@ func DailyRecommendations(w http.ResponseWriter, r *http.Request) {
 
 	currentDate := time.Now().Format("2006-01-02")
 
-	prompt := fmt.Sprintf(`Anda adalah seorang analis saham Indonesia yang berpengalaman. Berikan rekomendasi saham harian untuk trading dengan brief konsisten berikut:
+	prompt := fmt.Sprintf(`Anda adalah head trader di investment firm Jakarta dengan 15 tahun pengalaman trading saham Indonesia. Client VIP meminta daily picks untuk modal Rp 7.5 juta pada %s.
 
-PROFIL TRADER:
-- Modal: Rp 7,5 juta
-- Target profit: 4-5%% per trade
-- Frekuensi: 3x seminggu atau daily trading
-- Strategi: Entry saat reversal, take profit cepat
+TRADING MANDATE:
+- Capital: Rp 7,500,000
+- Target: 4-5%% per trade
+- Style: Active day/swing trading
+- Timeline: 1-3 days per position
 
-TUGAS ANDA:
-Berikan analisis mendalam untuk tanggal %s dan rekomendasikan 2-3 saham terbaik untuk entry hari ini dengan potensi profit 4-5%% besok/lusa.
+MARKET BRIEFING %s:
 
-FORMAT ANALISIS:
-1. **RINGKASAN PASAR** - Kondisi IHSG, sentimen global, berita makro hari ini
-2. **REKOMENDASI SAHAM** - Untuk setiap saham berikan:
-   - Kode saham & nama perusahaan
-   - Harga saat ini & target price
-   - Alasan fundamental (laporan keuangan, berita, proyeksi)
-   - Analisis teknikal (candlestick, support/resistance, volume, RSI, MACD)
-   - Level entry yang tepat
-   - Take profit & stop loss
-   - Confidence level (High/Medium/Low)
-3. **RISK MANAGEMENT** - Saran alokasi modal dan manajemen risiko
-4. **TIMING** - Kapan waktu terbaik entry (opening, mid-day, closing)
+**IHSG STATUS**
+Current level: [Estimate based on typical range]
+Trend: [Bullish/Bearish/Sideways]
+Key resistance: [Level]
+Key support: [Level]
 
-KRITERIA SAHAM:
-- Likuiditas tinggi (easy exit)
-- Volatilitas cukup untuk profit 4-5%%
-- Fundamental tidak bermasalah
-- Pattern teknikal mendukung
-- Volume trading memadai
+**SECTOR ROTATION**
+Outperforming: [Which sectors leading]
+Underperforming: [Weak sectors]
+Foreign flow: [Net buy/sell estimate]
 
-Berikan analisis yang detail, praktis, dan actionable. Fokus pada saham-saham yang realistis bisa memberikan return 4-5%% dalam 1-2 hari trading.`, currentDate)
+**TOP 4 TRADING OPPORTUNITIES**
 
-	response, err := callGeminiAPI(prompt)
+**PICK 1: BLUE CHIP DEFENSIVE**
+Stock: [Choose from BBCA, BBRI, ASII, UNVR]
+Price: Rp [Realistic current estimate]
+Why now: [Specific catalyst]
+Technical: [Pattern, RSI, support/resistance]
+Entry: Rp [range]
+Target: Rp [4-5%% up]
+Stop: Rp [level]
+Size: Rp [amount from 7.5M]
+Risk: Low-Medium
+
+**PICK 2: GROWTH/IPO MOMENTUM**  
+Stock: [CDIA, GOTO, or similar growth play]
+Price: Rp [Realistic estimate]
+Why now: [Growth catalyst or momentum]
+Technical: [Breakout, volume, momentum indicators]
+Entry: Rp [range]
+Target: Rp [4-5%% up but account for volatility]
+Stop: Rp [tighter due to volatility]
+Size: Rp [smaller allocation due to risk]
+Risk: High
+
+**PICK 3: RECOVERY VALUE**
+Stock: [Oversold quality name]
+Price: Rp [Current depressed level]
+Why now: [Oversold bounce opportunity]
+Technical: [Reversal signals, support test]
+Entry: Rp [at support]
+Target: Rp [bounce target]
+Stop: Rp [below support]
+Size: Rp [amount]
+Risk: Medium
+
+**PICK 4: MOMENTUM BREAKOUT**
+Stock: [High beta momentum play]
+Price: Rp [Current price near breakout]
+Why now: [Breakout setup, volume surge]
+Technical: [Pattern completion, momentum]
+Entry: Rp [breakout level]
+Target: Rp [measured move]
+Stop: Rp [below breakout]
+Size: Rp [amount]
+Risk: Medium-High
+
+**PORTFOLIO ALLOCATION**
+Total deployed: Rp [sum of positions]
+Cash reserve: Rp [remaining]
+Max single position: 30%% of capital
+Correlation check: [Ensure diversification]
+
+**EXECUTION STRATEGY**
+09:00-09:30: [Opening gap analysis]
+10:30-11:30: [Mid-session momentum]
+13:30-15:00: [Afternoon positioning]
+
+**RISK MANAGEMENT**
+Portfolio stop: [If IHSG breaks X level]
+Individual stops: [Price-based, not time-based]
+Profit taking: [25%% at 3%%, 50%% at 4%%, remainder at 5%%]
+
+Provide actionable recommendations with specific stock names, realistic prices, and clear entry/exit levels. Focus on liquid Indonesian stocks suitable for Rp 7.5M capital deployment.`, currentDate, currentDate)
+
+	response, err := callGemini2API(prompt)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(StockRecommendationResponse{
@@ -106,55 +136,86 @@ Berikan analisis yang detail, praktis, dan actionable. Fokus pada saham-saham ya
 	})
 }
 
-func callGeminiAPI(prompt string) (string, error) {
+func callGemini2API(prompt string) (string, error) {
 	apiKey := os.Getenv("GEMINI_API_KEY")
 	if apiKey == "" {
 		return "", fmt.Errorf("GEMINI_API_KEY is not set")
 	}
 
-	geminiReqBody := GeminiRequest{
-		Contents: []Content{
+	requestBody := map[string]interface{}{
+		"contents": []map[string]interface{}{
 			{
-				Parts: []Part{
-					{Text: prompt},
+				"parts": []map[string]interface{}{
+					{
+						"text": prompt,
+					},
 				},
+			},
+		},
+		"generationConfig": map[string]interface{}{
+			"temperature":     0.9, // Max creativity for realistic market simulation
+			"topK":            40,
+			"topP":            0.95,
+			"maxOutputTokens": 8192,
+		},
+		"safetySettings": []map[string]interface{}{
+			{
+				"category":  "HARM_CATEGORY_DANGEROUS_CONTENT",
+				"threshold": "BLOCK_NONE",
+			},
+			{
+				"category":  "HARM_CATEGORY_HARASSMENT",
+				"threshold": "BLOCK_NONE",
 			},
 		},
 	}
 
-	jsonBody, err := json.Marshal(geminiReqBody)
+	jsonBody, err := json.Marshal(requestBody)
 	if err != nil {
 		return "", fmt.Errorf("failed to create request body: %v", err)
 	}
 
-	url := "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey
+	url := "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return "", fmt.Errorf("failed to create HTTP request: %v", err)
 	}
-	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{Timeout: 30 * time.Second}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-goog-api-key", apiKey)
+
+	client := &http.Client{Timeout: 60 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("failed to send request to Gemini API: %v", err)
+		return "", fmt.Errorf("failed to send request to Gemini 2.0 API: %v", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		var errorResponse map[string]interface{}
 		json.NewDecoder(resp.Body).Decode(&errorResponse)
-		return "", fmt.Errorf("error from Gemini API (status %d): %v", resp.StatusCode, errorResponse)
+		return "", fmt.Errorf("error from Gemini 2.0 API (status %d): %v", resp.StatusCode, errorResponse)
 	}
 
-	var geminiResp GeminiResponse
+	var geminiResp map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&geminiResp); err != nil {
-		return "", fmt.Errorf("failed to parse Gemini response: %v", err)
+		return "", fmt.Errorf("failed to parse Gemini 2.0 response: %v", err)
 	}
 
-	if len(geminiResp.Candidates) > 0 && len(geminiResp.Candidates[0].Content.Parts) > 0 {
-		return geminiResp.Candidates[0].Content.Parts[0].Text, nil
+	if candidates, ok := geminiResp["candidates"].([]interface{}); ok && len(candidates) > 0 {
+		if candidate, ok := candidates[0].(map[string]interface{}); ok {
+			if content, ok := candidate["content"].(map[string]interface{}); ok {
+				if parts, ok := content["parts"].([]interface{}); ok && len(parts) > 0 {
+					if part, ok := parts[0].(map[string]interface{}); ok {
+						if text, ok := part["text"].(string); ok {
+							return text, nil
+						}
+					}
+				}
+			}
+		}
 	}
 
-	return "", fmt.Errorf("no content received from Gemini")
+	return "", fmt.Errorf("no content received from Gemini 2.0")
 }
