@@ -2,17 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "main.go",
+      "src": "*.go",
       "use": "@vercel/go"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "main.go"
+      "dest": "/main.go"
     }
-  ],
-  "env": {
-    "GEMINI_API_KEY": "@gemini_api_key"
-  }
+  ]
 }
